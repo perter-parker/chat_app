@@ -60,6 +60,15 @@ class AuthRepository {
     }
   }
 
+  Future<UserCredential> signInAnonymously(BuildContext context) {
+    try {
+      return auth.signInAnonymously();
+    } on FirebaseAuthException catch (e) {
+      showSnackBar(context: context, content: e.message!);
+      return auth.signInAnonymously();
+    }
+  }
+
   void verifyOTP({
     required BuildContext context,
     required String verificationId,
@@ -88,7 +97,9 @@ class AuthRepository {
     required BuildContext context,
   }) async {
     try {
-      String uid = auth.currentUser!.uid;
+      // String uid = auth.currentUser!.uid;
+      UserCredential result = await auth.signInAnonymously();
+      String uid = result.user!.uid;
       String photoUrl =
           'https://png.pngitem.com/pimgs/s/649-6490124_katie-notopoulos-katienotopoulos-i-write-about-tech-round.png';
 
@@ -104,7 +115,7 @@ class AuthRepository {
         uid: uid,
         profilePic: photoUrl,
         isOnline: true,
-        phoneNumber: auth.currentUser!.phoneNumber!,
+        phoneNumber: "+8201000001111",
         groupId: [],
       );
 

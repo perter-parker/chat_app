@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 // import 'package:chat_module/common/widgets/error.dart';
 import 'package:chat_module/features/auth/screens/login_screen.dart';
 // import 'package:chat_module/features/auth/screens/otp_screen.dart';
-// import 'package:chat_module/features/auth/screens/user_information_screen.dart';
+import 'package:chat_module/features/auth/screens/user_information_screen.dart';
 // import 'package:chat_module/features/group/screens/create_group_screen.dart';
-// import 'package:chat_module/features/select_contacts/screens/select_contacts_screen.dart';
+import 'package:chat_module/features/select_contacts/screens/select_contacts_screen.dart';
 // import 'package:chat_module/features/chat/screens/mobile_chat_screen.dart';
 // import 'package:chat_module/features/status/screens/confirm_status_screen.dart';
 // import 'package:chat_module/features/status/screens/status_screen.dart';
@@ -16,10 +16,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(
         builder: (context) => const LoginScreen(),
       );
-    default:
-      return MaterialPageRoute(
-        builder: (context) => const LoginScreen(),
-      );
+
     // case OTPScreen.routeName:
     //   final verificationId = settings.arguments as String;
     //   return MaterialPageRoute(
@@ -27,14 +24,14 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     //       verificationId: verificationId,
     //     ),
     //   );
-    // case UserInformationScreen.routeName:
-    //   return MaterialPageRoute(
-    //     builder: (context) => const UserInformationScreen(),
-    //   );
-    // case SelectContactsScreen.routeName:
-    //   return MaterialPageRoute(
-    //     builder: (context) => const SelectContactsScreen(),
-    //   );
+    case UserInformationScreen.routeName:
+      return MaterialPageRoute(
+        builder: (context) => const UserInformationScreen(),
+      );
+    case SelectContactsScreen.routeName:
+      return MaterialPageRoute(
+        builder: (context) => const SelectContactsScreen(),
+      );
     // case MobileChatScreen.routeName:
     //   final arguments = settings.arguments as Map<String, dynamic>;
     //   final name = arguments['name'];
@@ -73,5 +70,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     //       body: ErrorScreen(error: 'This page doesn\'t exist'),
     //     ),
     // );
+    default:
+      return MaterialPageRoute(
+        builder: (context) => const LoginScreen(),
+      );
   }
 }

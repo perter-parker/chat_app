@@ -1,3 +1,4 @@
+import 'package:chat_module/features/auth/screens/user_information_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:chat_module/common/utils/colors.dart';
 import 'package:chat_module/common/widgets/custom_button.dart';
@@ -8,6 +9,14 @@ class LandingScreen extends StatelessWidget {
 
   void navigateToLoginScreen(BuildContext context) {
     Navigator.pushNamed(context, LoginScreen.routeName);
+  }
+
+  void navigateToUserInfomationScreen(BuildContext context) {
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      UserInformationScreen.routeName,
+      (route) => false,
+    );
   }
 
   @override
@@ -48,7 +57,7 @@ class LandingScreen extends StatelessWidget {
               width: size.width * 0.75,
               child: CustomButton(
                 text: 'AGREE AND CONTINUE',
-                onPressed: () => navigateToLoginScreen(context),
+                onPressed: () => navigateToUserInfomationScreen(context),
               ),
             ),
           ],

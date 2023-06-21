@@ -32,6 +32,10 @@ class AuthController {
     authRepository.signInWithPhone(context, phoneNumber);
   }
 
+  void signInAnonymously(BuildContext context) {
+    authRepository.signInAnonymously(context);
+  }
+
   void verifyOTP(BuildContext context, String verificationId, String userOTP) {
     authRepository.verifyOTP(
       context: context,
