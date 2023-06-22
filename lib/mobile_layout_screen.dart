@@ -1,9 +1,12 @@
+import 'dart:io';
+
+import 'package:chat_module/common/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chat_module/common/utils/colors.dart';
 import 'package:chat_module/features/auth/controller/auth_controller.dart';
 // import 'package:chat_module/features/group/screens/create_group_screen.dart';
-// import 'package:chat_module/features/select_contacts/screens/select_contacts_screen.dart';
+import 'package:chat_module/features/select_contacts/screens/select_contacts_screen.dart';
 import 'package:chat_module/features/chat/widgets/contacts_list.dart';
 // import 'package:chat_module/features/status/screens/confirm_status_screen.dart';
 // import 'package:chat_module/features/status/screens/status_contacts_screen.dart';
@@ -111,27 +114,27 @@ class _MobileLayoutScreenState extends ConsumerState<MobileLayoutScreen>
           controller: tabBarController,
           children: const [ContactsList(), Text('STATUS'), Text('Calls')],
         ),
-        // floatingActionButton: FloatingActionButton(
-        //   onPressed: () async {
-        //     if (tabBarController.index == 0) {
-        //       Navigator.pushNamed(context, SelectContactsScreen.routeName);
-        //     } else {
-        //       File? pickedImage = await pickImageFromGallery(context);
-        //       if (pickedImage != null) {
-        //         Navigator.pushNamed(
-        //           context,
-        //           ConfirmStatusScreen.routeName,
-        //           arguments: pickedImage,
-        //         );
-        //       }
-        //     }
-        //   },
-        //   backgroundColor: tabColor,
-        //   child: const Icon(
-        //     Icons.comment,
-        //     color: Colors.white,
-        //   ),
-        // ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+            if (tabBarController.index == 0) {
+              Navigator.pushNamed(context, SelectContactsScreen.routeName);
+            } else {
+              File? pickedImage = await pickImageFromGallery(context);
+              if (pickedImage != null) {
+                // Navigator.pushNamed(
+                //   context,
+                //   ConfirmStatusScreen.routeName,
+                //   arguments: pickedImage,
+                // );
+              }
+            }
+          },
+          backgroundColor: tabColor,
+          child: const Icon(
+            Icons.comment,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }

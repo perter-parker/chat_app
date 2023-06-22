@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -115,7 +116,7 @@ class AuthRepository {
         uid: uid,
         profilePic: photoUrl,
         isOnline: true,
-        phoneNumber: "+8201000001111",
+        phoneNumber: generateRandomDigits(),
         groupId: [],
       );
 
@@ -145,5 +146,16 @@ class AuthRepository {
     await firestore.collection('users').doc(auth.currentUser!.uid).update({
       'isOnline': isOnline,
     });
+  }
+
+  String generateRandomDigits() {
+    String phoneNumber = '01000000000';
+
+    String modifiedPhoneNumber = phoneNumber.replaceAllMapped(RegExp('0000'), (match) {
+      int randomDigits = Random().nextInt(10000);
+      return randomDigits.toString().padLeft(4, '0');
+    });
+
+    return modifiedPhoneNumber;
   }
 }

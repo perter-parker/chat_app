@@ -1,5 +1,5 @@
+import 'package:chat_module/models/user_model.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_contacts/contact.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chat_module/common/widgets/error.dart';
 import 'package:chat_module/common/widgets/loader.dart';
@@ -9,7 +9,7 @@ class SelectContactsScreen extends ConsumerWidget {
   static const String routeName = '/select-contact';
   const SelectContactsScreen({Key? key}) : super(key: key);
 
-  void selectContact(WidgetRef ref, Contact selectedContact, BuildContext context) {
+  void selectContact(WidgetRef ref, UserModel selectedContact, BuildContext context) {
     ref.read(selectContactControllerProvider).selectContact(selectedContact, context);
   }
 
@@ -44,17 +44,15 @@ class SelectContactsScreen extends ConsumerWidget {
                       padding: const EdgeInsets.only(bottom: 8.0),
                       child: ListTile(
                         title: Text(
-                          contact.displayName,
+                          contact.name,
                           style: const TextStyle(
                             fontSize: 18,
                           ),
                         ),
-                        leading: contact.photo == null
-                            ? null
-                            : CircleAvatar(
-                                backgroundImage: MemoryImage(contact.photo!),
-                                radius: 30,
-                              ),
+                        leading: CircleAvatar(
+                          backgroundImage: NetworkImage(contact.profilePic),
+                          radius: 30,
+                        ),
                       ),
                     ),
                   );

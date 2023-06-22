@@ -1,5 +1,5 @@
+import 'package:chat_module/models/user_model.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_contacts/contact.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:chat_module/features/select_contacts/repository/select_contact_repository.dart';
@@ -25,7 +25,7 @@ class SelectContactController {
     required this.selectContactRepository,
   });
 
-  void selectContact(Contact selectedContact, BuildContext context) {
+  void selectContact(UserModel selectedContact, BuildContext context) {
     selectContactRepository.selectContact(selectedContact, context);
   }
 }
