@@ -1,3 +1,4 @@
+import 'package:chat_module/features/chat/widgets/date_divider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -28,6 +29,14 @@ class ChatList extends ConsumerStatefulWidget {
 class _ChatListState extends ConsumerState<ChatList> {
   final ScrollController messageController = ScrollController();
 
+  bool isScrolling = false; // 스크롤 중인지 여부
+  DateTime? currentMessageDate; // 현재 메시지의 날짜
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
   @override
   void dispose() {
     super.dispose();
@@ -48,66 +57,113 @@ class _ChatListState extends ConsumerState<ChatList> {
         );
   }
 
+  void handleScroll() {
+    if (messageController.offset == messageController.position.maxScrollExtent &&
+        !messageController.position.outOfRange) {
+      print('스크롤이 맨 바닥에 위치해 있습니다');
+    } else if (messageController.offset == messageController.position.minScrollExtent &&
+        !messageController.position.outOfRange) {
+      print('스크롤이 맨 위에 위치해 있습니다');
+    }
+
+    print('offset = ${messageController.offset}');
+  }
+
+  bool _isDifferentDate(DateTime currentDate, DateTime previousDate) {
+    return currentDate.year != previousDate.year ||
+        currentDate.month != previousDate.month ||
+        currentDate.day != previousDate.day;
+  }
+
+  Widget _buildMessageCard(Message messageData, String timeSent) {
+    if (messageData.senderId == FirebaseAuth.instance.currentUser!.uid) {
+      return MyMessageCard(
+        message: messageData.text,
+        date: timeSent,
+        type: messageData.type,
+        repliedText: messageData.repliedMessage,
+        username: messageData.repliedTo,
+        repliedMessageType: messageData.repliedMessageType,
+        onLeftSwipe: () => onMessageSwipe(
+          messageData.text,
+          true,
+          messageData.type,
+        ),
+        isSeen: messageData.isSeen,
+      );
+    } else {
+      return SenderMessageCard(
+        message: messageData.text,
+        date: timeSent,
+        type: messageData.type,
+        username: messageData.repliedTo,
+        repliedMessageType: messageData.repliedMessageType,
+        onRightSwipe: () => onMessageSwipe(
+          messageData.text,
+          false,
+          messageData.type,
+        ),
+        repliedText: messageData.repliedMessage,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<Message>>(
-        stream: widget.isGroupChat
-            ? ref.read(chatControllerProvider).groupChatStream(widget.recieverUserId)
-            : ref.read(chatControllerProvider).chatStream(widget.recieverUserId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Loader();
-          }
+    return Stack(
+      children: [
+        StreamBuilder<List<Message>>(
+            stream: widget.isGroupChat
+                ? ref.read(chatControllerProvider).groupChatStream(widget.recieverUserId)
+                : ref.read(chatControllerProvider).chatStream(widget.recieverUserId),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Loader();
+              }
 
-          SchedulerBinding.instance.addPostFrameCallback((_) {
-            messageController.jumpTo(messageController.position.maxScrollExtent);
-          });
+              /**
+               * 위젯 빌드 완료 시 화면 제일 아래로 이동
+               */
+              SchedulerBinding.instance.addPostFrameCallback((_) {
+                messageController.jumpTo(messageController.position.maxScrollExtent);
+              });
 
-          return ListView.builder(
-            controller: messageController,
-            itemCount: snapshot.data!.length,
-            itemBuilder: (context, index) {
-              final messageData = snapshot.data![index];
-              var timeSent = DateFormat.Hm().format(messageData.timeSent);
+              return ListView.builder(
+                controller: messageController,
+                itemCount: snapshot.data!.length,
+                itemBuilder: (context, index) {
+                  final messageData = snapshot.data![index];
+                  var timeSent = DateFormat.Hm().format(messageData.timeSent);
 
-              if (!messageData.isSeen && messageData.recieverid == FirebaseAuth.instance.currentUser!.uid) {
-                ref.read(chatControllerProvider).setChatMessageSeen(
-                      context,
-                      widget.recieverUserId,
-                      messageData.messageId,
+                  // 읽음 확인
+                  if (!messageData.isSeen && messageData.recieverid == FirebaseAuth.instance.currentUser!.uid) {
+                    ref.read(chatControllerProvider).setChatMessageSeen(
+                          context,
+                          widget.recieverUserId,
+                          messageData.messageId,
+                        );
+                  }
+
+                  // 날짜가 변경되었을 때, DateDivider 위젯을 생성하여 표시합니다.
+                  if (index == 0 || _isDifferentDate(messageData.timeSent, snapshot.data![index - 1].timeSent)) {
+                    return Column(
+                      children: [
+                        DateDivider(date: messageData.timeSent),
+                        _buildMessageCard(messageData, timeSent),
+                      ],
                     );
-              }
-              if (messageData.senderId == FirebaseAuth.instance.currentUser!.uid) {
-                return MyMessageCard(
-                  message: messageData.text,
-                  date: timeSent,
-                  type: messageData.type,
-                  repliedText: messageData.repliedMessage,
-                  username: messageData.repliedTo,
-                  repliedMessageType: messageData.repliedMessageType,
-                  onLeftSwipe: () => onMessageSwipe(
-                    messageData.text,
-                    true,
-                    messageData.type,
-                  ),
-                  isSeen: messageData.isSeen,
-                );
-              }
-              return SenderMessageCard(
-                message: messageData.text,
-                date: timeSent,
-                type: messageData.type,
-                username: messageData.repliedTo,
-                repliedMessageType: messageData.repliedMessageType,
-                onRightSwipe: () => onMessageSwipe(
-                  messageData.text,
-                  false,
-                  messageData.type,
-                ),
-                repliedText: messageData.repliedMessage,
+                  }
+
+                  // 이전 메시지와 날짜가 같을 경우에는 DateDivider 없이 메시지 카드만 생성합니다.
+                  return _buildMessageCard(messageData, timeSent);
+                },
               );
-            },
-          );
-        });
+            }),
+        if (isScrolling)
+          Container(
+            child: Text('하이'),
+          ),
+      ],
+    );
   }
 }
