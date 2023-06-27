@@ -1,4 +1,10 @@
+import 'dart:async';
+import 'dart:collection';
+import 'dart:developer';
+import 'dart:math' as math;
+
 import 'package:chat_module/features/chat/widgets/date_divider.dart';
+import 'package:chat_module/features/chat/widgets/fixed_header.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -28,18 +34,25 @@ class ChatList extends ConsumerStatefulWidget {
 
 class _ChatListState extends ConsumerState<ChatList> {
   final ScrollController messageController = ScrollController();
-
-  bool isScrolling = false; // 스크롤 중인지 여부
-  DateTime? currentMessageDate; // 현재 메시지의 날짜
+  final StreamController<int> _streamController = StreamController<int>();
+  final LinkedHashMap<String, GlobalKey> _keys = LinkedHashMap();
+  final GlobalKey _key = GlobalKey();
+  int _topElementIndex = 0;
+  List<String> dateList = [];
+  // RenderBox? _listBox;
+  RenderBox? _headerBox;
+  GlobalKey? _groupHeaderKey;
 
   @override
   void initState() {
     super.initState();
+    messageController.addListener(handleScroll);
   }
 
   @override
   void dispose() {
     super.dispose();
+    _streamController.close();
     messageController.dispose();
   }
 
@@ -58,15 +71,37 @@ class _ChatListState extends ConsumerState<ChatList> {
   }
 
   void handleScroll() {
-    if (messageController.offset == messageController.position.maxScrollExtent &&
-        !messageController.position.outOfRange) {
-      print('스크롤이 맨 바닥에 위치해 있습니다');
-    } else if (messageController.offset == messageController.position.minScrollExtent &&
-        !messageController.position.outOfRange) {
-      print('스크롤이 맨 위에 위치해 있습니다');
+    // _listBox ??= _key.currentContext?.findRenderObject() as RenderBox?;
+    // var listPos = _listBox?.localToGlobal(Offset.zero).dy ?? 0;
+    _headerBox ??= _groupHeaderKey?.currentContext?.findRenderObject() as RenderBox?;
+    var headerHeight = _headerBox?.size.height ?? 0;
+    var max = double.negativeInfinity;
+    var topItemKey = '${dateList.length - 1}';
+    for (var entry in _keys.entries) {
+      var key = entry.value;
+      if (_isListItemRendered(key)) {
+        var itemBox = key.currentContext!.findRenderObject() as RenderBox;
+        var y = itemBox.localToGlobal(Offset(0, -headerHeight)).dy;
+        if (y <= headerHeight && y > max) {
+          topItemKey = entry.key;
+          max = y;
+        }
+      }
     }
+    var index = math.max(int.parse(topItemKey), 0);
+    if (index != _topElementIndex) {
+      var curr = index;
+      var prev = _topElementIndex;
 
-    print('offset = ${messageController.offset}');
+      if (prev != curr) {
+        _topElementIndex = index;
+        _streamController.add(_topElementIndex);
+      }
+    }
+  }
+
+  bool _isListItemRendered(GlobalKey<State<StatefulWidget>> key) {
+    return key.currentContext != null && key.currentContext!.findRenderObject() != null;
   }
 
   bool _isDifferentDate(DateTime currentDate, DateTime previousDate) {
@@ -111,6 +146,7 @@ class _ChatListState extends ConsumerState<ChatList> {
   @override
   Widget build(BuildContext context) {
     return Stack(
+      key: _key,
       children: [
         StreamBuilder<List<Message>>(
             stream: widget.isGroupChat
@@ -146,9 +182,30 @@ class _ChatListState extends ConsumerState<ChatList> {
 
                   // 날짜가 변경되었을 때, DateDivider 위젯을 생성하여 표시합니다.
                   if (index == 0 || _isDifferentDate(messageData.timeSent, snapshot.data![index - 1].timeSent)) {
+                    final dateFormat =
+                        DateFormat.yMEd('ko').format(messageData.timeSent).replaceAll('(', '').replaceAll(')', '');
+                    if (!dateList.contains(dateFormat)) {
+                      dateList.insert(0, dateFormat);
+                    }
+                    GlobalKey<State<StatefulWidget>> key;
+                    if (dateList.isEmpty) {
+                      key = _keys.putIfAbsent('0', () => GlobalKey());
+                    } else {
+                      /**
+                       * 스크롤 할 때 마다 화면 전체를 빌드해버림
+                       * 그러면서 _keys에 다시 사용하게 되는게 이전에 있던 key값들은 이미 사용중이기 때문에 다시 빌드 중에 오류 발생
+                       * dateList는 초기화 되지 않는 다는 말이지 'key'값이 존재한다면 다른 Globalkey()를 생성해서 만들어줘야함.
+                       */
+                      if (_keys.containsKey('${dateList.length - 1}')) {
+                        _keys['${dateList.length - 1}'] = GlobalKey();
+                        key = _keys.putIfAbsent('${dateList.length - 1}', () => GlobalKey());
+                      } else {
+                        key = _keys.putIfAbsent('${dateList.length - 1}', () => GlobalKey());
+                      }
+                    }
                     return Column(
                       children: [
-                        DateDivider(date: messageData.timeSent),
+                        DateDivider(key: key, date: messageData.timeSent),
                         _buildMessageCard(messageData, timeSent),
                       ],
                     );
@@ -159,10 +216,21 @@ class _ChatListState extends ConsumerState<ChatList> {
                 },
               );
             }),
-        if (isScrolling)
-          Container(
-            child: Text('하이'),
-          ),
+        StreamBuilder(
+            stream: _streamController.stream,
+            initialData: _topElementIndex,
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                _groupHeaderKey = GlobalKey();
+                return FixedHeader(
+                  groupHeaderKey: _groupHeaderKey,
+                  context: context,
+                  dateList: dateList,
+                  index: snapshot.data!,
+                );
+              }
+              return const SizedBox.shrink();
+            }),
       ],
     );
   }

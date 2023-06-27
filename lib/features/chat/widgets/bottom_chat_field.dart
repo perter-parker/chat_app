@@ -37,7 +37,7 @@ class _BottomChatFieldState extends ConsumerState<BottomChatField> {
   @override
   void initState() {
     super.initState();
-    _soundRecorder = FlutterSoundRecorder();
+    // _soundRecorder = FlutterSoundRecorder();
     // openAudio();
   }
 
@@ -150,7 +150,7 @@ class _BottomChatFieldState extends ConsumerState<BottomChatField> {
   void dispose() {
     super.dispose();
     _messageController.dispose();
-    _soundRecorder!.closeRecorder();
+    // _soundRecorder!.closeRecorder();
     isRecorderInit = false;
   }
 
